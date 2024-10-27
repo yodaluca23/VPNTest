@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VPN Connection Status</title>
+</head>
+<body>
+  <h1 id="vpnStatus">Checking VPN connection...</h1>
+  <h2 id="supportedServices">We support the following services: Surfshark, PrivateInternetAccess, and Mullvad.</h2>
+
+  <script>
+    async function checkVPNStatus() {
+      try {
+        // Initialize variables for responses
+        let surfResponse, piaResponse, mullResponse;
+
+        // Get request to Surfshark API
+        const surfResponseRaw = await fetch('https://surfshark.com/api/v1/server/user');
+        if (surfResponseRaw.ok) {
+          surfResponse = await surfResponseRaw.json();
+        } else {
+          surfResponse = { secured: false, ip: '' }; // Default values if request fails
+        }
+
+        // Get request to PIA API
+        const piaResponseRaw = await fetch('https://www.privateinternetaccess.com/site-api/exposed-check');
+        if (piaResponseRaw.ok) {
+          piaResponse = await piaResponseRaw.json();
+        } else {
+          piaResponse = { status: true };
+        }
+
+        // Check if Surfshark provided an IP address before proceeding with Mullvad check
+        if (surfResponse.ip) {
+          // Get request to Mullvad API using the IP from Surfshark response
+          const mullResponseRaw = await fetch(`https://corsproxy.io/?https://am.i.mullvad.net/check-ip/${surfResponse.ip}`);
+          if (mullResponseRaw.ok) {
+            mullResponse = await mullResponseRaw.json();
+          } else {
+            mullResponse = { mullvad_exit_ip: false };
+          }
+        } else {
+          mullResponse = { mullvad_exit_ip: false }; // Default value if no IP available
+        }
+
+        // Determine VPN status based on response data
+        const isVPNConnected = surfResponse.secured || !piaResponse.status || mullResponse.mullvad_exit_ip;
+
+        // Update the webpage based on VPN status
+        document.getElementById("vpnStatus").innerText = isVPNConnected 
+          ? "You are connected to a VPN" 
+          : "You are not connected to a VPN";
+
+      } catch (error) {
+        console.error("Error checking VPN status:", error);
+        document.getElementById("vpnStatus").innerText = "Error checking VPN status";
+      }
+    }
+
+    // Run the VPN status check when the page loads
+    checkVPNStatus();
+  </script>
+</body>
+</html>
