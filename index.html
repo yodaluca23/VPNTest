@@ -44,13 +44,25 @@
           mullResponse = { mullvad_exit_ip: false }; // Default value if no IP available
         }
 
-        // Determine VPN status based on response data
-        const isVPNConnected = surfResponse.secured || !piaResponse.status || mullResponse.mullvad_exit_ip;
+        // Determine VPN status and connected service based on response data
+        let isVPNConnected = false;
+        let connectedService = '';
 
-        // Update the webpage based on VPN status
+        if (surfResponse.secured) {
+          isVPNConnected = true;
+          connectedService = 'SurfShark';
+        } else if (!piaResponse.status) {
+          isVPNConnected = true;
+          connectedService = 'Private Internet Access (PIA)';
+        } else if (mullResponse.mullvad_exit_ip) {
+          isVPNConnected = true;
+          connectedService = 'Mullvad';
+        }
+
+        // Update the webpage based on VPN status and connected service
         document.getElementById("vpnStatus").innerText = isVPNConnected 
-          ? "You are connected to a VPN" 
-          : "You are not connected to a VPN";
+          ? `You are connected to ${connectedService}.`
+          : "You are not connected to a VPN.";
 
       } catch (error) {
         console.error("Error checking VPN status:", error);
