@@ -23,16 +23,21 @@
           surfResponse = { secured: false, ip: '' }; // Default values if request fails
         }
 
-        // Get request to PIA API
-        const piaResponseRaw = await fetch('https://www.privateinternetaccess.com/site-api/exposed-check');
-        if (piaResponseRaw.ok) {
-          piaResponse = await piaResponseRaw.json();
-        } else {
-          piaResponse = { status: true };
-        }
-
-        // Check if Surfshark provided an IP address before proceeding with Mullvad check
+        // Proceed with PIA request only if Surfshark provides an IP
         if (surfResponse.ip) {
+          // Make a POST request to PIA with the Surfshark IP in the request body
+          const piaResponseRaw = await fetch('https://www.privateinternetaccess.com/site-api/exposed-check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ipAddress: surfResponse.ip })
+          });
+          
+          if (piaResponseRaw.ok) {
+            piaResponse = await piaResponseRaw.json();
+          } else {
+            piaResponse = { status: true };
+          }
+
           // Get request to Mullvad API using the IP from Surfshark response
           const mullResponseRaw = await fetch(`https://corsproxy.io/?https://am.i.mullvad.net/check-ip/${surfResponse.ip}`);
           if (mullResponseRaw.ok) {
@@ -41,7 +46,8 @@
             mullResponse = { mullvad_exit_ip: false };
           }
         } else {
-          mullResponse = { mullvad_exit_ip: false }; // Default value if no IP available
+          piaResponse = { status: true }; // Default value if no IP available from Surfshark
+          mullResponse = { mullvad_exit_ip: false };
         }
 
         // Determine VPN status and connected service based on response data
