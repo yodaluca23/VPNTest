@@ -39,7 +39,7 @@
           }
 
           // Get request to Mullvad API using the IP from Surfshark response
-          const mullResponseRaw = await fetch(`https://corsproxy.io/?https://am.i.mullvad.net/check-ip/${surfResponse.ip}`);
+          const mullResponseRaw = await fetch(`https://thingproxy.freeboard.io/fetch/https://am.i.mullvad.net/check-ip/${surfResponse.ip}`);
           if (mullResponseRaw.ok) {
             mullResponse = await mullResponseRaw.json();
           } else {
